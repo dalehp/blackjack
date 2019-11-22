@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/user/dalehp/deck"
 )
@@ -12,11 +13,20 @@ func draw(d []deck.Card) (deck.Card, []deck.Card) {
 	return d[0], d[1:]
 }
 
-func printDealer(h Hand) string {
-	return fmt.Sprintf("------ %s", h[1:])
+func (h Hand) String() string {
+	strs := make([]string, len(h))
+	for i, card := range h {
+		strs[i] = card.String()
+	}
+	return strings.Join(strs, ", ")
 }
 
-func score(h Hand) (total int) {
+func printDealer(h Hand) string {
+	return h[0].String() + ", ------"
+}
+
+/* Score returns the score of a hand */
+func (h Hand) Score() (total int) {
 	ace := false
 	for _, c := range h {
 		if c.Rank >= deck.Ten {
@@ -49,14 +59,10 @@ func main() {
 	}
 
 	var input string
-	for input != "s" {
+	for input != "s" && player.Score() <= 21 {
 		input = ""
-		if score(player) > 21 {
-			fmt.Println("You have bust. Dealer wins :(")
-			return
-		}
 		fmt.Printf("Dealer has %s\n", printDealer(dealer))
-		fmt.Printf("You have %s (%d), (s)tand or (h)it?", player, score(player))
+		fmt.Printf("You have %s (%d), (s)tand or (h)it?", player, player.Score())
 		fmt.Scanln(&input)
 		if input == "h" {
 			card, cards = draw(cards)
@@ -64,15 +70,19 @@ func main() {
 		}
 	}
 
-	for ds := score(dealer); ds < 17; {
+	for ds := dealer.Score(); ds < 17; {
 		card, cards = draw(cards)
 		dealer = append(dealer, card)
-		ds = score(dealer)
+		ds = dealer.Score()
 	}
 
-	dp := score(player)
-	ds := score(dealer)
+	dp := player.Score()
+	ds := dealer.Score()
+	fmt.Printf("DEALER: %s\n", dealer)
+	fmt.Printf("PLAYER: %s\n", player)
 	switch {
+	case dp > 21:
+		fmt.Println("Player busts, you lose.")
 	case ds > 21:
 		fmt.Println("Dealer busts, you win!")
 	case dp > ds:
@@ -82,6 +92,4 @@ func main() {
 	case ds == dp:
 		fmt.Printf("It's a tie :/")
 	}
-
-	fmt.Println(player, dealer)
 }
